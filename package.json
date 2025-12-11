@@ -1,0 +1,8 @@
+{
+  "name": "trmnl-go-bloor-union",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "unzipper": "^0.12.3"
+  }
+}
