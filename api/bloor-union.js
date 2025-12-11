@@ -149,8 +149,57 @@ async function refreshCacheIfNeeded() {
 
   // Find stop_ids
   const stops = parseCsv(stopsTxt);
-  const bloor = stops.find(s => (s.stop_name || "").toLowerCase().includes("bloor"));
-  const union = stops.find(s => (s.stop_name || "").toLowerCase().includes("union station"));
+
+function scoreStop(stop, variants) {
+  const name = String(stop.stop_name || "").toLowerCase();
+  const locType = String(stop.location_type || ""); // often "1" for station
+  let score = 0;
+
+  // Prefer stations if present
+  if (locType === "1") score += 5;
+
+  for (const v of variants) {
+    const vv = v.toLowerCase();
+    if (name === vv) score += 20;
+    if (name.includes(vv)) score += 10;
+  }
+
+  // Prefer names containing "go" when looking for GO stations
+  if (name.includes(" go")) score += 2;
+
+  return score;
+}
+
+function bestStop(variants) {
+  const ranked = stops
+    .map(s => ({ s, score: scoreStop(s, variants) }))
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return ranked[0]?.s || null;
+}
+
+const bloor = bestStop(["Bloor GO", "Bloor"]);
+const union = bestStop(["Union Station GO", "Union Station", "Union Stn", "Union"]);
+
+if (!bloor?.stop_id || !union?.stop_id) {
+  // Optional: include candidates in the error to troubleshoot quickly
+  const bloorCandidates = stops
+    .filter(s => String(s.stop_name || "").toLowerCase().includes("bloor"))
+    .slice(0, 10)
+    .map(s => ({ stop_id: s.stop_id, stop_name: s.stop_name, location_type: s.location_type }));
+
+  const unionCandidates = stops
+    .filter(s => String(s.stop_name || "").toLowerCase().includes("union"))
+    .slice(0, 10)
+    .map(s => ({ stop_id: s.stop_id, stop_name: s.stop_name, location_type: s.location_type }));
+
+  throw new Error(
+    `Could not find stop_id for Bloor/Union. Candidates: ` +
+    `Bloor=${JSON.stringify(bloorCandidates)} Union=${JSON.stringify(unionCandidates)}`
+  );
+}
+
 
   if (!bloor?.stop_id || !union?.stop_id) {
     throw new Error("Could not find stop_id for Bloor or Union Station in GTFS stops.txt");
@@ -278,3 +327,4 @@ export default async function handler(req, res) {
     });
   }
 }
+
