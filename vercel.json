@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/bloor-union.js": {
+      "maxDuration": 60
+    }
+  }
+}
