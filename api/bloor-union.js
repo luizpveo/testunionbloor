@@ -149,6 +149,12 @@ async function refreshCacheIfNeeded() {
 
   // Find stop_ids
   const stops = parseCsv(stopsTxt);
+  console.log("stops header keys:", Object.keys(stops[0] || {}));
+  const bloor = stops.find(s => (s.stop_name || "").trim() === "Bloor GO")
+  || stops.find(s => (s.stop_name || "").toLowerCase().includes("bloor"));
+
+const union = stops.find(s => (s.stop_name || "").trim() === "Union Station GO")
+  || stops.find(s => (s.stop_name || "").toLowerCase().includes("union station"));
 
 function scoreStop(stop, variants) {
   const name = String(stop.stop_name || "").toLowerCase();
@@ -187,12 +193,20 @@ if (!bloor?.stop_id || !union?.stop_id) {
   const bloorCandidates = stops
     .filter(s => String(s.stop_name || "").toLowerCase().includes("bloor"))
     .slice(0, 10)
-    .map(s => ({ stop_id: s.stop_id, stop_name: s.stop_name, location_type: s.location_type }));
+   .map(s => ({
+  stop_id: s.stop_id,
+  stop_name: s.stop_name,
+  location_type: s.location_type
+}));
 
   const unionCandidates = stops
     .filter(s => String(s.stop_name || "").toLowerCase().includes("union"))
     .slice(0, 10)
-    .map(s => ({ stop_id: s.stop_id, stop_name: s.stop_name, location_type: s.location_type }));
+   .map(s => ({
+  stop_id: s.stop_id,
+  stop_name: s.stop_name,
+  location_type: s.location_type
+}));
 
   throw new Error(
     `Could not find stop_id for Bloor/Union. Candidates: ` +
@@ -327,4 +341,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
 
